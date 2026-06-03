@@ -3733,6 +3733,7 @@ document.addEventListener('keydown', function(e){
     <div class="modal-divider"></div>
 
     <!-- Tally embed placeholder — to be connected before public release -->
+    <div class="cf-placeholder" data-i18n="cfPlaceholder"></div>
 
     <div class="cf-field">
       <label class="cf-label" data-i18n="cfName">Name / 聯絡人稱呼</label>
@@ -3752,7 +3753,7 @@ document.addEventListener('keydown', function(e){
       <textarea class="cf-textarea" id="cf-message" placeholder="Your message..."></textarea>
     </div>
     <button class="cf-submit" onclick="submitDesktopContact(event)" data-i18n="cfSubmit">Send Message</button>
-    <div id="cf-notice" style="display:none;margin-top:10px;font-size:13px;text-align:center;padding:10px;border-radius:8px;"></div>
+    <div id="cf-notice" style="display:none;margin-top:10px;font-size:13px;color:rgba(0,210,255,.70);text-align:center;padding:10px;border:1px dashed rgba(0,210,255,.25);border-radius:8px;"></div>
   </div>
 </div>
 
@@ -4595,14 +4596,19 @@ document.addEventListener('keydown', function(e){
     </div>
     <div class="mc-field">
       <div class="mc-label" data-i18n="cfTopic">Topic</div>
-      <input class="mc-input" id="mc-topic" type="text" placeholder="What's this about?" autocomplete="off">
+      <input class="mc-input" id="mc-topic" type="text" placeholder="What\'s this about?" autocomplete="off">
+    </div>
+    <div class="mc-field">
+      <div class="mc-label" data-i18n="cfMsgType">Message Type</div>
+      <div class="mc-display-field">Collaboration Inquiry</div>
     </div>
     <div class="mc-field">
       <div class="mc-label" data-i18n="cfMessage">Message</div>
       <textarea class="mc-textarea" id="mc-message" placeholder="Your message..."></textarea>
     </div>
     <button type="button" class="mc-btn-send" onclick="submitMobileContact(event)" data-i18n="cfSubmit">Send Message</button>
-    <div id="mc-notice" class="mc-notice" style="display:none;"></div>
+    <div id="mc-notice" class="mc-notice" style="display:none">
+      </div>
   </div>
 </div>
 <!-- ═══ R8: MOBILE MODAL OVERLAY — z-9999 bottom sheet (About Creator) ═══ -->
@@ -4646,78 +4652,62 @@ document.addEventListener('keydown', function(e){
   </div>
 </div>
 
-<!-- ═══ R12: Formspree Integration — minimal, no external packages ═══ -->
+<!-- ═══ R12: Formspree Integration ═══ -->
 <script>
 (function(){
-  var ENDPOINT = 'https://formspree.io/f/mjgdbela';
-
-  function showStatus(el, msg, ok){
-    el.textContent = msg;
-    el.style.display = 'block';
-    el.style.color = ok ? 'rgba(0,210,255,.80)' : 'rgba(255,120,120,.85)';
-    el.style.border = ok ? '1px dashed rgba(0,210,255,.25)' : '1px dashed rgba(255,120,120,.25)';
+  var EP='https://formspree.io/f/mjgdbela';
+  function showMsg(el,msg,ok){
+    el.textContent=msg;
+    el.style.display='block';
+    el.style.color=ok?'rgba(0,210,255,.80)':'rgba(255,100,100,.85)';
+    el.style.border=ok?'1px dashed rgba(0,210,255,.25)':'1px dashed rgba(255,100,100,.25)';
   }
-
-  window.submitDesktopContact = function(e){
-    e.preventDefault();
-    var name    = (document.getElementById('cf-name')   ||{}).value || '';
-    var email   = (document.getElementById('cf-email')  ||{}).value || '';
-    var topic   = (document.getElementById('cf-topic')  ||{}).value || '';
-    var message = (document.getElementById('cf-message')||{}).value || '';
-    var notice  = document.getElementById('cf-notice');
-
-    if(!email){ showStatus(notice,'Please enter your email address.',false); return; }
-    if(!message){ showStatus(notice,'Please enter a message.',false); return; }
-
-    showStatus(notice,'Sending…', true);
-    fetch(ENDPOINT,{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Accept':'application/json'},
-      body:JSON.stringify({name:name,email:email,topic:topic,message:message})
-    })
-    .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
+  function doSend(fields,noticeId,cb){
+    fetch(EP,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(fields)})
+    .then(function(r){return r.json().then(function(d){return{ok:r.ok,d:d};});})
     .then(function(res){
-      if(res.ok){
-        showStatus(notice,'✓ Message sent! Thank you for reaching out.', true);
-        ['cf-name','cf-email','cf-topic','cf-message'].forEach(function(id){
-          var el=document.getElementById(id); if(el) el.value='';
-        });
-      } else {
-        showStatus(notice,'Something went wrong. Please try again or email directly.', false);
-      }
+      var el=document.getElementById(noticeId);
+      if(res.ok){showMsg(el,'✓ Message sent! Thank you for reaching out.',true);if(cb)cb();}
+      else{showMsg(el,'Something went wrong. Please try again.',false);}
     })
-    .catch(function(){ showStatus(notice,'Network error. Please check your connection and try again.', false); });
+    .catch(function(){
+      var el=document.getElementById(noticeId);
+      showMsg(el,'Network error. Please check your connection.',false);
+    });
+  }
+  window.submitDesktopContact=function(e){
+    e.preventDefault();
+    var n=document.getElementById('cf-notice');
+    var email=(document.getElementById('cf-email')||{}).value||'';
+    var msg=(document.getElementById('cf-message')||{}).value||'';
+    if(!email){showMsg(n,'Please enter your email address.',false);return;}
+    if(!msg){showMsg(n,'Please enter a message.',false);return;}
+    showMsg(n,'Sending…',true);
+    doSend({
+      name:(document.getElementById('cf-name')||{}).value||'',
+      email:email,
+      topic:(document.getElementById('cf-topic')||{}).value||'',
+      message:msg
+    },'cf-notice',function(){
+      ['cf-name','cf-email','cf-topic','cf-message'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+    });
   };
-
-  window.submitMobileContact = function(e){
+  window.submitMobileContact=function(e){
     e.preventDefault();
-    var name    = (document.getElementById('mc-name')   ||{}).value || '';
-    var email   = (document.getElementById('mc-email')  ||{}).value || '';
-    var topic   = (document.getElementById('mc-topic')  ||{}).value || '';
-    var message = (document.getElementById('mc-message')||{}).value || '';
-    var notice  = document.getElementById('mc-notice');
-
-    if(!email){ showStatus(notice,'Please enter your email address.',false); return; }
-    if(!message){ showStatus(notice,'Please enter a message.',false); return; }
-
-    showStatus(notice,'Sending…', true);
-    fetch(ENDPOINT,{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Accept':'application/json'},
-      body:JSON.stringify({name:name,email:email,topic:topic,message:message})
-    })
-    .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
-    .then(function(res){
-      if(res.ok){
-        showStatus(notice,'✓ Message sent! Thank you for reaching out.', true);
-        ['mc-name','mc-email','mc-topic','mc-message'].forEach(function(id){
-          var el=document.getElementById(id); if(el) el.value='';
-        });
-      } else {
-        showStatus(notice,'Something went wrong. Please try again or email directly.', false);
-      }
-    })
-    .catch(function(){ showStatus(notice,'Network error. Please check your connection and try again.', false); });
+    var n=document.getElementById('mc-notice');
+    var email=(document.getElementById('mc-email')||{}).value||'';
+    var msg=(document.getElementById('mc-message')||{}).value||'';
+    if(!email){showMsg(n,'Please enter your email address.',false);return;}
+    if(!msg){showMsg(n,'Please enter a message.',false);return;}
+    showMsg(n,'Sending…',true);
+    doSend({
+      name:(document.getElementById('mc-name')||{}).value||'',
+      email:email,
+      topic:(document.getElementById('mc-topic')||{}).value||'',
+      message:msg
+    },'mc-notice',function(){
+      ['mc-name','mc-email','mc-topic','mc-message'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+    });
   };
 })();
 </script>
