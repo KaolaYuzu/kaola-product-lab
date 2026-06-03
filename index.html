@@ -3631,6 +3631,118 @@ function closeMobileModalOnOverlay(e) {
 document.addEventListener('keydown', function(e){
   if(e.key === 'Escape') closeMobileModal();
 });
+
+// ─── Formspree Contact Form (R10) ───
+const CONTACT_FORM_ENDPOINT = "https://formspree.io/f/mjgdbela";
+
+function submitContactForm() {
+  var lang = (typeof currentLang !== 'undefined') ? currentLang : 'en';
+  var isZh = (lang === 'zh');
+
+  var nameEl    = document.getElementById('cf-name');
+  var emailEl   = document.getElementById('cf-email');
+  var topicEl   = document.getElementById('cf-topic');
+  var msgEl     = document.getElementById('cf-message');
+  var gotchaEl  = document.getElementById('cf-gotcha');
+  var submitBtn = document.getElementById('cf-submit-btn');
+  var noticeEl  = document.getElementById('cf-notice');
+
+  var name    = nameEl  ? nameEl.value.trim()  : '';
+  var email   = emailEl ? emailEl.value.trim() : '';
+  var topic   = topicEl ? topicEl.value.trim() : '';
+  var message = msgEl   ? msgEl.value.trim()   : '';
+  var gotcha  = gotchaEl ? gotchaEl.value : '';
+
+  // Honeypot check
+  if (gotcha) return;
+
+  // Validation
+  var missing = [];
+  if (!name)    missing.push(isZh ? 'Name（姓名）' : 'Name');
+  if (!email)   missing.push('Email');
+  if (!message) missing.push(isZh ? 'Message（內容）' : 'Message');
+  if (missing.length > 0) {
+    showCfNotice(isZh
+      ? '請填寫必填欄位：' + missing.join('、')
+      : 'Please fill in: ' + missing.join(', '),
+      'error');
+    return;
+  }
+
+  // Email format check
+  var emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  if (!emailRe.test(email)) {
+    showCfNotice(isZh ? '請輸入有效的電子郵件地址。' : 'Please enter a valid email address.', 'error');
+    return;
+  }
+
+  // Disable button
+  submitBtn.disabled = true;
+  submitBtn.textContent = isZh ? '送出中…' : 'Sending…';
+  noticeEl.style.display = 'none';
+
+  fetch(CONTACT_FORM_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: name,
+      email: email,
+      topic: topic,
+      message: message,
+      source: 'Kaola Product Lab Contact Form',
+      page: window.location.href,
+      submittedAt: new Date().toISOString()
+    })
+  })
+  .then(function(res) {
+    if (res.ok) {
+      showCfNotice(isZh
+        ? '訊息已送出，謝謝你，我會查看。'
+        : 'Message sent. Thank you — I\'ll read it soon.',
+        'success');
+      // Clear fields
+      if (nameEl)  nameEl.value  = '';
+      if (emailEl) emailEl.value = '';
+      if (topicEl) topicEl.value = '';
+      if (msgEl)   msgEl.value   = '';
+    } else {
+      throw new Error('non-ok');
+    }
+  })
+  .catch(function() {
+    showCfNotice(isZh
+      ? '目前送出失敗，請稍後再試。'
+      : 'Message could not be sent. Please try again later.',
+      'error');
+  })
+  .finally(function() {
+    submitBtn.disabled = false;
+    // Re-apply i18n text to button
+    var i18nKey = 'cfSubmit';
+    var i18nData = (typeof window.i18nData !== 'undefined') ? window.i18nData : null;
+    if (i18nData && i18nData[lang] && i18nData[lang][i18nKey]) {
+      submitBtn.textContent = i18nData[lang][i18nKey];
+    } else {
+      submitBtn.textContent = isZh ? '送出訊息' : 'Send Message';
+    }
+  });
+}
+
+function showCfNotice(text, type) {
+  var el = document.getElementById('cf-notice');
+  if (!el) return;
+  el.textContent = text;
+  el.style.display = 'block';
+  if (type === 'success') {
+    el.style.color  = 'rgba(0,210,255,0.85)';
+    el.style.border = '1px dashed rgba(0,210,255,0.35)';
+    el.style.background = 'rgba(0,210,255,0.05)';
+  } else {
+    el.style.color  = 'rgba(255,100,80,0.85)';
+    el.style.border = '1px dashed rgba(255,100,80,0.35)';
+    el.style.background = 'rgba(255,80,60,0.05)';
+  }
+}
 </script>
 
 
@@ -3732,28 +3844,27 @@ document.addEventListener('keydown', function(e){
     <h2 class="modal-title" data-i18n="cfTitle">Contact / Feedback</h2>
     <div class="modal-divider"></div>
 
-    <!-- Tally embed placeholder — to be connected before public release -->
-    <div class="cf-placeholder" data-i18n="cfPlaceholder">Contact form will be connected before public release.</div>
-
     <div class="cf-field">
       <label class="cf-label" data-i18n="cfName">Name / 聯絡人稱呼</label>
-      <input class="cf-input" type="text" placeholder="Your name">
+      <input id="cf-name" class="cf-input" type="text" placeholder="Your name" autocomplete="name">
     </div>
     <div class="cf-field">
       <label class="cf-label">Email</label>
-      <input class="cf-input" type="email" placeholder="your@email.com">
+      <input id="cf-email" class="cf-input" type="email" placeholder="your@email.com" autocomplete="email">
     </div>
     <div class="cf-field">
       <label class="cf-label" data-i18n="cfTopic">Topic / 主題</label>
-      <input class="cf-input" type="text" placeholder="What's this about?">
+      <input id="cf-topic" class="cf-input" type="text" placeholder="What's this about?">
     </div>
     <!-- Message Type select removed (A-R4: no dropdown in contact form) -->
     <div class="cf-field">
       <label class="cf-label" data-i18n="cfMessage">Message / 內容</label>
-      <textarea class="cf-textarea" placeholder="Your message..."></textarea>
+      <textarea id="cf-message" class="cf-textarea" placeholder="Your message..."></textarea>
     </div>
-    <button class="cf-submit" onclick="document.getElementById('cf-notice').style.display='block'" data-i18n="cfSubmit">Send Message</button>
-    <div id="cf-notice" style="display:none;margin-top:10px;font-size:13px;color:rgba(0,210,255,.70);text-align:center;padding:10px;border:1px dashed rgba(0,210,255,.25);border-radius:8px;">Contact form will be connected before public release.</div>
+    <!-- Honeypot: hidden from real users, bots fill it -->
+    <input type="text" name="_gotcha" id="cf-gotcha" style="display:none" tabindex="-1" autocomplete="off">
+    <button id="cf-submit-btn" class="cf-submit" onclick="submitContactForm()" data-i18n="cfSubmit">Send Message</button>
+    <div id="cf-notice" style="display:none;margin-top:10px;font-size:13px;text-align:center;padding:10px;border-radius:8px;"></div>
   </div>
 </div>
 
