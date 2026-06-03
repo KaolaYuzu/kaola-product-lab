@@ -2995,7 +2995,7 @@ var i18n = {
     crCollabTitle:'Collaboration & Conversation',
     crCollabBody:'If you have an idea you want to turn into a website, a web tool, or a portfolio page, or if there is a workflow that feels stuck and you are wondering whether AI or web tools could help, feel free to reach out.<br><br>I am currently learning what creators, small brands, and freelancers actually struggle with when organizing content, presenting work, building websites, creating workflow tools, or applying AI in practical ways.<br><br>If the direction feels right, we can start with a small website, a template, an interactive tool, or a workflow prototype. If it is still unclear, we can first clarify the problem together.',
     cfTitle:'Contact / Feedback',cfSubtitle:'Get in touch',
-    cfPlaceholder:'Contact form will be connected before public release.',
+    cfPlaceholder:'',
     cfName:'Name',cfTopic:'Topic',cfMsgType:'Message Type',
     cfOpt1:'Collaboration Inquiry',cfOpt2:'Product Feedback',cfOpt3:'Personal Note',
     cfMessage:'Message',cfSubmit:'Send Message',
@@ -3591,7 +3591,7 @@ function openMobileContact(){
   document.body.style.overflow='hidden';
   /* reset notice */
   var notice = document.getElementById('mc-notice');
-  if(notice){ notice.style.display='none'; notice.textContent=''; }
+  if(notice) notice.style.display='none';
 }
 function closeMobileContact(){
   var modal = document.getElementById('mobileContactModal');
@@ -3631,134 +3631,6 @@ function closeMobileModalOnOverlay(e) {
 document.addEventListener('keydown', function(e){
   if(e.key === 'Escape') closeMobileModal();
 });
-
-/* ══════════════════════════════════════════════
-   R11 — Formspree Contact Form
-   Endpoint: https://formspree.io/f/mjgdbela
-   Scope: desktop contactModal + mobile mobileContactModal
-   No structural changes — only submit wiring added.
-══════════════════════════════════════════════ */
-var CONTACT_FORM_ENDPOINT = "https://formspree.io/f/mjgdbela";
-
-function _doFormspreeSubmit(data, btnEl, noticeEl) {
-  var isZH = (typeof lang !== 'undefined' && lang === 'zh');
-  var origText = btnEl.textContent;
-  btnEl.disabled = true;
-  btnEl.textContent = isZH ? '送出中…' : 'Sending…';
-  noticeEl.style.display = 'none';
-  fetch(CONTACT_FORM_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  })
-  .then(function(r) {
-    var zh = (typeof lang !== 'undefined' && lang === 'zh');
-    btnEl.disabled = false;
-    btnEl.textContent = origText;
-    if (r.ok) {
-      noticeEl.style.color = 'rgba(0,210,255,.80)';
-      noticeEl.textContent = zh
-        ? '訊息已送出，謝謝你，我會查看。'
-        : 'Message sent. Thank you — I\'ll read it soon.';
-    } else {
-      noticeEl.style.color = 'rgba(255,120,100,.85)';
-      noticeEl.textContent = zh
-        ? '目前送出失敗，請稍後再試。'
-        : 'Message could not be sent. Please try again later.';
-    }
-    noticeEl.style.display = 'block';
-  })
-  .catch(function() {
-    var zh = (typeof lang !== 'undefined' && lang === 'zh');
-    btnEl.disabled = false;
-    btnEl.textContent = origText;
-    noticeEl.style.color = 'rgba(255,120,100,.85)';
-    noticeEl.textContent = zh
-      ? '目前送出失敗，請稍後再試。'
-      : 'Message could not be sent. Please try again later.';
-    noticeEl.style.display = 'block';
-  });
-}
-
-function submitDesktopContact(e) {
-  if (e) { e.preventDefault(); e.stopPropagation(); }
-  var gotcha = document.getElementById('cf-gotcha');
-  if (gotcha && gotcha.value) return;
-  var nameEl    = document.getElementById('cf-name');
-  var emailEl   = document.getElementById('cf-email');
-  var topicEl   = document.getElementById('cf-topic');
-  var messageEl = document.getElementById('cf-message');
-  var noticeEl  = document.getElementById('cf-notice');
-  var btnEl     = document.querySelector('#contactModal .cf-submit');
-  var name    = nameEl    ? nameEl.value.trim()    : '';
-  var email   = emailEl   ? emailEl.value.trim()   : '';
-  var topic   = topicEl   ? topicEl.value.trim()   : '';
-  var message = messageEl ? messageEl.value.trim() : '';
-  var isZH = (typeof lang !== 'undefined' && lang === 'zh');
-  if (!name) {
-    noticeEl.style.color = 'rgba(255,160,80,.90)';
-    noticeEl.textContent = isZH ? '請填寫姓名。' : 'Please enter your name.';
-    noticeEl.style.display = 'block'; return;
-  }
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    noticeEl.style.color = 'rgba(255,160,80,.90)';
-    noticeEl.textContent = isZH ? '請填寫有效的 Email。' : 'Please enter a valid email address.';
-    noticeEl.style.display = 'block'; return;
-  }
-  if (!message) {
-    noticeEl.style.color = 'rgba(255,160,80,.90)';
-    noticeEl.textContent = isZH ? '請填寫訊息內容。' : 'Please enter your message.';
-    noticeEl.style.display = 'block'; return;
-  }
-  _doFormspreeSubmit({
-    name: name, email: email, topic: topic,
-    messageType: '', message: message,
-    source: 'Kaola Product Lab Contact Form',
-    page: window.location.href,
-    submittedAt: new Date().toISOString()
-  }, btnEl, noticeEl);
-}
-
-function submitMobileContact(e) {
-  if (e) { e.preventDefault(); e.stopPropagation(); }
-  var gotcha = document.getElementById('mc-gotcha');
-  if (gotcha && gotcha.value) return;
-  var nameEl        = document.getElementById('mc-name');
-  var emailEl       = document.getElementById('mc-email');
-  var topicEl       = document.getElementById('mc-topic');
-  var msgtypeEl     = document.getElementById('mc-msgtype');
-  var messageEl     = document.getElementById('mc-message');
-  var noticeEl      = document.getElementById('mc-notice');
-  var btnEl         = document.querySelector('#mobileContactModal .mc-btn-send');
-  var name        = nameEl        ? nameEl.value.trim()        : '';
-  var email       = emailEl       ? emailEl.value.trim()       : '';
-  var topic       = topicEl       ? topicEl.value.trim()       : '';
-  var messageType = msgtypeEl     ? msgtypeEl.value.trim()     : '';
-  var message     = messageEl     ? messageEl.value.trim()     : '';
-  var isZH = (typeof lang !== 'undefined' && lang === 'zh');
-  if (!name) {
-    noticeEl.style.color = 'rgba(255,160,80,.90)';
-    noticeEl.textContent = isZH ? '請填寫姓名。' : 'Please enter your name.';
-    noticeEl.style.display = 'block'; return;
-  }
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    noticeEl.style.color = 'rgba(255,160,80,.90)';
-    noticeEl.textContent = isZH ? '請填寫有效的 Email。' : 'Please enter a valid email address.';
-    noticeEl.style.display = 'block'; return;
-  }
-  if (!message) {
-    noticeEl.style.color = 'rgba(255,160,80,.90)';
-    noticeEl.textContent = isZH ? '請填寫訊息內容。' : 'Please enter your message.';
-    noticeEl.style.display = 'block'; return;
-  }
-  _doFormspreeSubmit({
-    name: name, email: email, topic: topic,
-    messageType: messageType, message: message,
-    source: 'Kaola Product Lab Contact Form',
-    page: window.location.href,
-    submittedAt: new Date().toISOString()
-  }, btnEl, noticeEl);
-}
 </script>
 
 
@@ -3861,29 +3733,26 @@ function submitMobileContact(e) {
     <div class="modal-divider"></div>
 
     <!-- Tally embed placeholder — to be connected before public release -->
-    <div class="cf-placeholder" data-i18n="cfPlaceholder">Contact form will be connected before public release.</div>
 
-    <!-- R11: honeypot -->
-    <input id="cf-gotcha" type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off">
     <div class="cf-field">
       <label class="cf-label" data-i18n="cfName">Name / 聯絡人稱呼</label>
-      <input id="cf-name" class="cf-input" type="text" placeholder="Your name">
+      <input class="cf-input" id="cf-name" type="text" placeholder="Your name">
     </div>
     <div class="cf-field">
       <label class="cf-label">Email</label>
-      <input id="cf-email" class="cf-input" type="email" placeholder="your@email.com">
+      <input class="cf-input" id="cf-email" type="email" placeholder="your@email.com">
     </div>
     <div class="cf-field">
       <label class="cf-label" data-i18n="cfTopic">Topic / 主題</label>
-      <input id="cf-topic" class="cf-input" type="text" placeholder="What's this about?">
+      <input class="cf-input" id="cf-topic" type="text" placeholder="What's this about?">
     </div>
     <!-- Message Type select removed (A-R4: no dropdown in contact form) -->
     <div class="cf-field">
       <label class="cf-label" data-i18n="cfMessage">Message / 內容</label>
-      <textarea id="cf-message" class="cf-textarea" placeholder="Your message..."></textarea>
+      <textarea class="cf-textarea" id="cf-message" placeholder="Your message..."></textarea>
     </div>
     <button class="cf-submit" onclick="submitDesktopContact(event)" data-i18n="cfSubmit">Send Message</button>
-    <div id="cf-notice" style="display:none;margin-top:10px;font-size:13px;text-align:center;padding:10px;border:1px dashed rgba(0,210,255,.25);border-radius:8px;"></div>
+    <div id="cf-notice" style="display:none;margin-top:10px;font-size:13px;text-align:center;padding:10px;border-radius:8px;"></div>
   </div>
 </div>
 
@@ -4714,38 +4583,26 @@ function submitMobileContact(e) {
     <h2 class="mc-title" data-i18n="cfTitle">Contact / Feedback</h2>
     <p class="mc-subtitle" data-i18n="cfSubtitle">Get in touch</p>
     <div class="mc-divider"></div>
-    <!-- R11: honeypot -->
-    <input id="mc-gotcha" type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off">
 
-    <!-- R11: real inputs — no autofocus, no JS .focus() on open, iOS keyboard opens only on tap -->
+    <!-- Mobile preview card only: non-focusable rows prevent iOS keyboard / AutoFill from opening. -->
     <div class="mc-field">
       <div class="mc-label" data-i18n="cfName">Name</div>
-      <input id="mc-name" class="mc-input" type="text" placeholder="Your name" autocomplete="name">
+      <input class="mc-input" id="mc-name" type="text" placeholder="Your name" autocomplete="off">
     </div>
     <div class="mc-field">
       <div class="mc-label">Email</div>
-      <input id="mc-email" class="mc-input" type="email" placeholder="your@email.com" autocomplete="email">
+      <input class="mc-input" id="mc-email" type="email" placeholder="your@email.com" autocomplete="off">
     </div>
     <div class="mc-field">
       <div class="mc-label" data-i18n="cfTopic">Topic</div>
-      <input id="mc-topic" class="mc-input" type="text" placeholder="What's this about?">
-    </div>
-    <div class="mc-field">
-      <div class="mc-label" data-i18n="cfMsgType">Message Type</div>
-      <select id="mc-msgtype" class="mc-select">
-        <option value="">— Select —</option>
-        <option value="Collaboration Inquiry">Collaboration Inquiry</option>
-        <option value="Project Feedback">Project Feedback</option>
-        <option value="General Question">General Question</option>
-        <option value="Other">Other</option>
-      </select>
+      <input class="mc-input" id="mc-topic" type="text" placeholder="What's this about?" autocomplete="off">
     </div>
     <div class="mc-field">
       <div class="mc-label" data-i18n="cfMessage">Message</div>
-      <textarea id="mc-message" class="mc-textarea" placeholder="Your message..."></textarea>
+      <textarea class="mc-textarea" id="mc-message" placeholder="Your message..."></textarea>
     </div>
     <button type="button" class="mc-btn-send" onclick="submitMobileContact(event)" data-i18n="cfSubmit">Send Message</button>
-    <div id="mc-notice" class="mc-notice" style="display:none"></div>
+    <div id="mc-notice" class="mc-notice" style="display:none;"></div>
   </div>
 </div>
 <!-- ═══ R8: MOBILE MODAL OVERLAY — z-9999 bottom sheet (About Creator) ═══ -->
@@ -4788,5 +4645,81 @@ function submitMobileContact(e) {
 
   </div>
 </div>
+
+<!-- ═══ R12: Formspree Integration — minimal, no external packages ═══ -->
+<script>
+(function(){
+  var ENDPOINT = 'https://formspree.io/f/mjgdbela';
+
+  function showStatus(el, msg, ok){
+    el.textContent = msg;
+    el.style.display = 'block';
+    el.style.color = ok ? 'rgba(0,210,255,.80)' : 'rgba(255,120,120,.85)';
+    el.style.border = ok ? '1px dashed rgba(0,210,255,.25)' : '1px dashed rgba(255,120,120,.25)';
+  }
+
+  window.submitDesktopContact = function(e){
+    e.preventDefault();
+    var name    = (document.getElementById('cf-name')   ||{}).value || '';
+    var email   = (document.getElementById('cf-email')  ||{}).value || '';
+    var topic   = (document.getElementById('cf-topic')  ||{}).value || '';
+    var message = (document.getElementById('cf-message')||{}).value || '';
+    var notice  = document.getElementById('cf-notice');
+
+    if(!email){ showStatus(notice,'Please enter your email address.',false); return; }
+    if(!message){ showStatus(notice,'Please enter a message.',false); return; }
+
+    showStatus(notice,'Sending…', true);
+    fetch(ENDPOINT,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify({name:name,email:email,topic:topic,message:message})
+    })
+    .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
+    .then(function(res){
+      if(res.ok){
+        showStatus(notice,'✓ Message sent! Thank you for reaching out.', true);
+        ['cf-name','cf-email','cf-topic','cf-message'].forEach(function(id){
+          var el=document.getElementById(id); if(el) el.value='';
+        });
+      } else {
+        showStatus(notice,'Something went wrong. Please try again or email directly.', false);
+      }
+    })
+    .catch(function(){ showStatus(notice,'Network error. Please check your connection and try again.', false); });
+  };
+
+  window.submitMobileContact = function(e){
+    e.preventDefault();
+    var name    = (document.getElementById('mc-name')   ||{}).value || '';
+    var email   = (document.getElementById('mc-email')  ||{}).value || '';
+    var topic   = (document.getElementById('mc-topic')  ||{}).value || '';
+    var message = (document.getElementById('mc-message')||{}).value || '';
+    var notice  = document.getElementById('mc-notice');
+
+    if(!email){ showStatus(notice,'Please enter your email address.',false); return; }
+    if(!message){ showStatus(notice,'Please enter a message.',false); return; }
+
+    showStatus(notice,'Sending…', true);
+    fetch(ENDPOINT,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify({name:name,email:email,topic:topic,message:message})
+    })
+    .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,data:d}; }); })
+    .then(function(res){
+      if(res.ok){
+        showStatus(notice,'✓ Message sent! Thank you for reaching out.', true);
+        ['mc-name','mc-email','mc-topic','mc-message'].forEach(function(id){
+          var el=document.getElementById(id); if(el) el.value='';
+        });
+      } else {
+        showStatus(notice,'Something went wrong. Please try again or email directly.', false);
+      }
+    })
+    .catch(function(){ showStatus(notice,'Network error. Please check your connection and try again.', false); });
+  };
+})();
+</script>
 </body>
 </html>
